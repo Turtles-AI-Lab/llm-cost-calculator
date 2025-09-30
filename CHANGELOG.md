@@ -5,7 +5,7 @@ All notable changes to the LLM Cost Calculator project will be documented in thi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2025-01-30
+## [1.0.0] - 2025-09-30
 
 ### Added
 - Initial release of LLM Cost Calculator web application
@@ -60,6 +60,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Easy to customize and extend
 - Clean, modern UI
 - Educational tooltips and guidance
-- Pricing data sourced from official provider documentation (January 2025)
+- Pricing data sourced from official provider documentation (September 2025)
 
 [1.0.0]: https://github.com/Turtles-AI-Lab/llm-cost-calculator/releases/tag/v1.0.0
