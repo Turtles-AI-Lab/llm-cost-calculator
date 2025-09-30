@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Compare LLM API costs across OpenAI, Anthropic, Google, Azure, and more. Calculate your AI costs instantly.">
+    <meta name="keywords" content="LLM, AI, cost calculator, OpenAI, Anthropic, Claude, GPT, pricing">
+    <title>LLM Cost Calculator - Compare AI API Pricing</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <h1>🤖 LLM Cost Calculator</h1>
+        <p class="subtitle">Compare AI API costs across providers instantly</p>
+        <a href="https://github.com/Turtles-AI-Lab/llm-cost-calculator" class="github-link" target="_blank">
+            ⭐ Star on GitHub
+        </a>
+    </header>
+
+    <main>
+        <!-- Calculator Section -->
+        <section class="calculator-section">
+            <h2>📊 Calculate Your Costs</h2>
+
+            <div class="input-grid">
+                <!-- Use Case Template -->
+                <div class="input-group">
+                    <label for="useCase">📋 Use Case Template</label>
+                    <select id="useCase">
+                        <option value="">Select a template...</option>
+                    </select>
+                </div>
+
+                <!-- Time Period -->
+                <div class="input-group">
+                    <label for="days">📅 Time Period</label>
+                    <select id="days">
+                        <option value="1">1 Day</option>
+                        <option value="7">1 Week</option>
+                        <option value="30" selected>1 Month</option>
+                        <option value="90">3 Months</option>
+                        <option value="365">1 Year</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-grid">
+                <!-- Input Tokens -->
+                <div class="input-group">
+                    <label for="inputTokens">
+                        📥 Avg Input Tokens per Request
+                        <span class="value-display" id="inputTokensValue">500</span>
+                    </label>
+                    <input type="range" id="inputTokens" min="50" max="10000" value="500" step="50">
+                    <small>~100 tokens ≈ 75 words</small>
+                </div>
+
+                <!-- Output Tokens -->
+                <div class="input-group">
+                    <label for="outputTokens">
+                        📤 Avg Output Tokens per Request
+                        <span class="value-display" id="outputTokensValue">500</span>
+                    </label>
+                    <input type="range" id="outputTokens" min="50" max="10000" value="500" step="50">
+                </div>
+
+                <!-- Requests Per Day -->
+                <div class="input-group">
+                    <label for="requestsPerDay">
+                        🔄 Requests per Day
+                        <span class="value-display" id="requestsPerDayValue">1000</span>
+                    </label>
+                    <input type="range" id="requestsPerDay" min="10" max="100000" value="1000" step="100">
+                </div>
+            </div>
+
+            <!-- Provider Filters -->
+            <div class="input-group">
+                <label>🏢 Select Providers to Compare</label>
+                <div class="provider-filters" id="providerFilters"></div>
+            </div>
+        </section>
+
+        <!-- Summary Section -->
+        <section class="calculator-section">
+            <h2>💰 Cost Summary</h2>
+            <div id="summary"></div>
+        </section>
+
+        <!-- Results Table -->
+        <section class="results-section">
+            <h2>📈 Detailed Comparison</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Provider / Model</th>
+                            <th>Input Cost</th>
+                            <th>Output Cost</th>
+                            <th>Total Cost</th>
+                            <th>Per Request</th>
+                            <th>Per 1K Requests</th>
+                            <th>Context Window</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTable">
+                        <tr>
+                            <td colspan="7" style="text-align: center;">Loading...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Info Section -->
+        <section class="calculator-section">
+            <h2>ℹ️ About This Calculator</h2>
+            <p style="margin-bottom: 15px;">
+                This calculator helps you estimate and compare costs across different LLM providers and models.
+                Pricing data is updated as of September 2025 and sourced from official provider websites.
+            </p>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">📚 How to Use:</h3>
+            <ul style="padding-left: 20px; line-height: 1.8;">
+                <li><strong>Use Case Templates:</strong> Quick-start with common scenarios like chatbots or document analysis</li>
+                <li><strong>Adjust Tokens:</strong> Set average input/output tokens per request (100 tokens ≈ 75 words)</li>
+                <li><strong>Set Volume:</strong> Define how many requests you'll make per day</li>
+                <li><strong>Compare Providers:</strong> Select/deselect providers to customize your comparison</li>
+                <li><strong>View Results:</strong> See costs sorted from cheapest to most expensive</li>
+            </ul>
+
+            <h3 style="margin-top: 20px; margin-bottom: 10px;">💡 Tips:</h3>
+            <ul style="padding-left: 20px; line-height: 1.8;">
+                <li>Start with a use case template to get realistic estimates</li>
+                <li>Consider context window size for longer conversations or documents</li>
+                <li>Local/self-hosted models have $0 API costs but require hardware investment</li>
+                <li>Mini/small models are great for simple tasks at much lower cost</li>
+                <li>Test multiple models to find the best quality/cost balance for your use case</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Built with ❤️ by <a href="https://github.com/Turtles-AI-Lab" target="_blank">Turtles AI Lab</a></p>
+        <p style="margin-top: 10px;">
+            <a href="https://github.com/Turtles-AI-Lab/llm-cost-calculator">View on GitHub</a> •
+            <a href="https://github.com/Turtles-AI-Lab/llm-cost-calculator/issues">Report Issue</a> •
+            <a href="mailto:jgreenia@jandraisolutions.com">Contact</a>
+        </p>
+        <p style="margin-top: 15px; font-size: 0.9rem; color: #94a3b8;">
+            Pricing data updated September 2025. Always verify with official provider documentation.
+        </p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/providers.js"></script>
+    <script src="js/calculator.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
