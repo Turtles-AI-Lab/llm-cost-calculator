@@ -206,7 +206,7 @@ function displaySummary(results) {
     const mostExpensive = results[results.length - 1];
     const savings = calculator.calculateSavings(cheapest, mostExpensive);
 
-    const annualCost = calculator.calculateAnnualCost(cheapest.totalCost);
+    const annualCost = calculator.calculateAnnualCost(cheapest.totalCost, state.days);
 
     container.innerHTML = `
         <div class="summary-grid">

@@ -32,7 +32,8 @@ class LLMCostCalculator {
         const totalCost = inputCost + outputCost;
 
         // Calculate per-request cost
-        const costPerRequest = totalCost / (requestsPerDay * days);
+        const totalRequests = requestsPerDay * days;
+        const costPerRequest = totalRequests > 0 ? totalCost / totalRequests : 0;
 
         return {
             provider: this.providers[provider].name,
@@ -145,10 +146,13 @@ class LLMCostCalculator {
     }
 
     /**
-     * Calculate annual cost
+     * Calculate annual cost from period cost
      */
-    calculateAnnualCost(monthlyCost) {
-        return monthlyCost * 12;
+    calculateAnnualCost(costForPeriod, days) {
+        // Convert to daily cost, then annualize
+        if (days <= 0) return 0;
+        const costPerDay = costForPeriod / days;
+        return costPerDay * 365;
     }
 
     /**
@@ -164,12 +168,12 @@ class LLMCostCalculator {
     estimateBreakeven(apiMonthlyCost, hardwareCost, monthlyOperatingCost = 200) {
         // monthlyOperatingCost = electricity + maintenance
         const monthlySavings = apiMonthlyCost - monthlyOperatingCost;
-        const breakevenMonths = hardwareCost / monthlySavings;
+        const breakevenMonths = monthlySavings > 0 ? Math.ceil(hardwareCost / monthlySavings) : Infinity;
 
         return {
-            breakevenMonths: Math.ceil(breakevenMonths),
+            breakevenMonths: breakevenMonths,
             monthlySavings: monthlySavings,
-            worthIt: breakevenMonths <= 24 // 2 years or less
+            worthIt: breakevenMonths !== Infinity && breakevenMonths <= 24 // 2 years or less
         };
     }
 }

@@ -43,6 +43,12 @@ const LLM_PROVIDERS = {
     anthropic: {
         name: "Anthropic",
         models: {
+            "claude-sonnet-4.5": {
+                name: "Claude Sonnet 4.5",
+                inputPrice: 3.00,
+                outputPrice: 15.00,
+                contextWindow: 200000
+            },
             "claude-3.5-sonnet": {
                 name: "Claude 3.5 Sonnet",
                 inputPrice: 3.00,
@@ -122,27 +128,15 @@ const LLM_PROVIDERS = {
         name: "Mistral AI",
         models: {
             "mistral-large": {
-                name: "Mistral Large",
-                inputPrice: 4.00,
-                outputPrice: 12.00,
+                name: "Mistral Large 24B",
+                inputPrice: 2.00,
+                outputPrice: 6.00,
                 contextWindow: 32000
             },
             "mistral-medium": {
                 name: "Mistral Medium",
-                inputPrice: 2.70,
-                outputPrice: 8.10,
-                contextWindow: 32000
-            },
-            "mistral-small": {
-                name: "Mistral Small",
-                inputPrice: 1.00,
-                outputPrice: 3.00,
-                contextWindow: 32000
-            },
-            "mistral-tiny": {
-                name: "Mistral Tiny",
-                inputPrice: 0.25,
-                outputPrice: 0.75,
+                inputPrice: 0.40,
+                outputPrice: 2.00,
                 contextWindow: 32000
             }
         }
