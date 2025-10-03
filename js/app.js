@@ -2,14 +2,15 @@
  * LLM Cost Calculator - Main Application
  */
 
-// State management
+// State management with defensive copy to prevent mutation issues
 const state = {
     inputTokens: 500,
     outputTokens: 500,
     requestsPerDay: 1000,
     days: 30,
-    selectedProviders: Object.keys(LLM_PROVIDERS),
-    results: []
+    selectedProviders: [...Object.keys(LLM_PROVIDERS)],
+    results: [],
+    _isCalculating: false // Flag to prevent concurrent calculations
 };
 
 // Initialize app
@@ -23,34 +24,57 @@ document.addEventListener('DOMContentLoaded', () => {
  * Initialize UI elements
  */
 function initializeUI() {
-    // Input listeners
-    document.getElementById('inputTokens').addEventListener('input', (e) => {
-        state.inputTokens = parseInt(e.target.value) || 0;
-        updateSliderValue('inputTokens', state.inputTokens);
-        calculate();
-    });
+    // Input listeners with null checks
+    const inputTokensEl = document.getElementById('inputTokens');
+    if (inputTokensEl) {
+        inputTokensEl.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value, 10) || 0;
+            // Validate and clamp to non-negative values
+            state.inputTokens = Math.max(0, value);
+            updateSliderValue('inputTokens', state.inputTokens);
+            calculate();
+        });
+    }
 
-    document.getElementById('outputTokens').addEventListener('input', (e) => {
-        state.outputTokens = parseInt(e.target.value) || 0;
-        updateSliderValue('outputTokens', state.outputTokens);
-        calculate();
-    });
+    const outputTokensEl = document.getElementById('outputTokens');
+    if (outputTokensEl) {
+        outputTokensEl.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value, 10) || 0;
+            // Validate and clamp to non-negative values
+            state.outputTokens = Math.max(0, value);
+            updateSliderValue('outputTokens', state.outputTokens);
+            calculate();
+        });
+    }
 
-    document.getElementById('requestsPerDay').addEventListener('input', (e) => {
-        state.requestsPerDay = parseInt(e.target.value) || 0;
-        updateSliderValue('requestsPerDay', state.requestsPerDay);
-        calculate();
-    });
+    const requestsPerDayEl = document.getElementById('requestsPerDay');
+    if (requestsPerDayEl) {
+        requestsPerDayEl.addEventListener('input', (e) => {
+            const value = parseInt(e.target.value, 10) || 0;
+            // Validate and clamp to non-negative values
+            state.requestsPerDay = Math.max(0, value);
+            updateSliderValue('requestsPerDay', state.requestsPerDay);
+            calculate();
+        });
+    }
 
-    document.getElementById('days').addEventListener('change', (e) => {
-        state.days = parseInt(e.target.value) || 30;
-        calculate();
-    });
+    const daysEl = document.getElementById('days');
+    if (daysEl) {
+        daysEl.addEventListener('change', (e) => {
+            const value = parseInt(e.target.value, 10) || 30;
+            // Validate and clamp to positive values (at least 1 day)
+            state.days = Math.max(1, value);
+            calculate();
+        });
+    }
 
     // Use case selector
-    document.getElementById('useCase').addEventListener('change', (e) => {
-        loadUseCase(e.target.value);
-    });
+    const useCaseEl = document.getElementById('useCase');
+    if (useCaseEl) {
+        useCaseEl.addEventListener('change', (e) => {
+            loadUseCase(e.target.value);
+        });
+    }
 
     // Provider checkboxes
     loadProviderFilters();
@@ -66,6 +90,11 @@ function initializeUI() {
  */
 function loadUseCaseTemplates() {
     const select = document.getElementById('useCase');
+
+    if (!select) {
+        console.error('Use case select element not found');
+        return;
+    }
 
     for (const [id, template] of Object.entries(USE_CASE_TEMPLATES)) {
         const option = document.createElement('option');
@@ -86,9 +115,13 @@ function loadUseCase(useCaseId) {
         state.outputTokens = useCase.avgOutputTokens;
         state.requestsPerDay = useCase.requestsPerDay;
 
-        document.getElementById('inputTokens').value = state.inputTokens;
-        document.getElementById('outputTokens').value = state.outputTokens;
-        document.getElementById('requestsPerDay').value = state.requestsPerDay;
+        const inputTokensEl = document.getElementById('inputTokens');
+        const outputTokensEl = document.getElementById('outputTokens');
+        const requestsPerDayEl = document.getElementById('requestsPerDay');
+
+        if (inputTokensEl) inputTokensEl.value = state.inputTokens;
+        if (outputTokensEl) outputTokensEl.value = state.outputTokens;
+        if (requestsPerDayEl) requestsPerDayEl.value = state.requestsPerDay;
 
         updateSliderValue('inputTokens', state.inputTokens);
         updateSliderValue('outputTokens', state.outputTokens);
@@ -104,6 +137,11 @@ function loadUseCase(useCaseId) {
 function loadProviderFilters() {
     const container = document.getElementById('providerFilters');
 
+    if (!container) {
+        console.error('Provider filters container not found');
+        return;
+    }
+
     for (const [id, provider] of Object.entries(LLM_PROVIDERS)) {
         const label = document.createElement('label');
         label.className = 'provider-filter';
@@ -114,7 +152,10 @@ function loadProviderFilters() {
         checkbox.checked = true;
         checkbox.addEventListener('change', (e) => {
             if (e.target.checked) {
-                state.selectedProviders.push(id);
+                // Prevent duplicates in selectedProviders array
+                if (!state.selectedProviders.includes(id)) {
+                    state.selectedProviders.push(id);
+                }
             } else {
                 state.selectedProviders = state.selectedProviders.filter(p => p !== id);
             }
@@ -133,7 +174,13 @@ function loadProviderFilters() {
 function updateSliderValue(id, value) {
     const display = document.getElementById(`${id}Value`);
     if (display) {
-        display.textContent = value.toLocaleString();
+        try {
+            // Safe toLocaleString with fallback
+            display.textContent = (typeof value === 'number' && !isNaN(value)) ? value.toLocaleString() : '0';
+        } catch (error) {
+            console.error('Error formatting number:', error);
+            display.textContent = String(value || '0');
+        }
     }
 }
 
@@ -141,18 +188,39 @@ function updateSliderValue(id, value) {
  * Calculate and display results
  */
 function calculate() {
-    // Get comparison results
-    state.results = calculator.compareProviders(
-        state.inputTokens,
-        state.outputTokens,
-        state.requestsPerDay,
-        state.days,
-        state.selectedProviders
-    );
+    // Prevent concurrent calculations (race condition fix)
+    if (state._isCalculating) {
+        return;
+    }
 
-    // Display results
-    displayResults(state.results);
-    displaySummary(state.results);
+    state._isCalculating = true;
+
+    try {
+        // Create defensive copy of selectedProviders to prevent mutation
+        const providersToUse = [...state.selectedProviders];
+
+        // Get comparison results
+        state.results = calculator.compareProviders(
+            state.inputTokens,
+            state.outputTokens,
+            state.requestsPerDay,
+            state.days,
+            providersToUse
+        );
+
+        // Display results
+        displayResults(state.results);
+        displaySummary(state.results);
+    } catch (error) {
+        console.error('Error calculating results:', error);
+        // Display error to user
+        const tbody = document.getElementById('resultsTable');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Error calculating results. Please check your inputs.</td></tr>';
+        }
+    } finally {
+        state._isCalculating = false;
+    }
 }
 
 /**
@@ -160,6 +228,12 @@ function calculate() {
  */
 function displayResults(results) {
     const tbody = document.getElementById('resultsTable');
+
+    if (!tbody) {
+        console.error('Results table body not found');
+        return;
+    }
+
     tbody.innerHTML = '';
 
     if (results.length === 0) {
@@ -173,19 +247,54 @@ function displayResults(results) {
             row.classList.add('best-value');
         }
 
-        row.innerHTML = `
-            <td>
-                <strong>${result.provider}</strong><br>
-                <small>${result.model}</small>
-                ${result.hardwareCost ? '<br><small class="hardware-cost">⚠️ Local hosting</small>' : ''}
-            </td>
-            <td>${calculator.formatCurrency(result.inputCost)}</td>
-            <td>${calculator.formatCurrency(result.outputCost)}</td>
-            <td><strong>${calculator.formatCurrency(result.totalCost)}</strong></td>
-            <td>${calculator.formatCurrency(result.costPerRequest, 4)}</td>
-            <td>${calculator.formatCurrency(calculator.calculateCostPer1K(result.costPerRequest))}</td>
-            <td>${result.contextWindow.toLocaleString()}</td>
-        `;
+        // Create cells safely using textContent/createElement to prevent XSS
+        const providerCell = document.createElement('td');
+        const providerStrong = document.createElement('strong');
+        providerStrong.textContent = result.provider;
+        providerCell.appendChild(providerStrong);
+        providerCell.appendChild(document.createElement('br'));
+        const modelSmall = document.createElement('small');
+        modelSmall.textContent = result.model;
+        providerCell.appendChild(modelSmall);
+        if (result.hardwareCost) {
+            providerCell.appendChild(document.createElement('br'));
+            const hardwareSmall = document.createElement('small');
+            hardwareSmall.className = 'hardware-cost';
+            hardwareSmall.textContent = '⚠️ Local hosting';
+            providerCell.appendChild(hardwareSmall);
+        }
+
+        const inputCostCell = document.createElement('td');
+        inputCostCell.textContent = calculator.formatCurrency(result.inputCost);
+
+        const outputCostCell = document.createElement('td');
+        outputCostCell.textContent = calculator.formatCurrency(result.outputCost);
+
+        const totalCostCell = document.createElement('td');
+        const totalCostStrong = document.createElement('strong');
+        totalCostStrong.textContent = calculator.formatCurrency(result.totalCost);
+        totalCostCell.appendChild(totalCostStrong);
+
+        const costPerRequestCell = document.createElement('td');
+        costPerRequestCell.textContent = calculator.formatCurrency(result.costPerRequest, 4);
+
+        const costPer1KCell = document.createElement('td');
+        costPer1KCell.textContent = calculator.formatCurrency(calculator.calculateCostPer1K(result.costPerRequest));
+
+        const contextWindowCell = document.createElement('td');
+        // Safe access to contextWindow with fallback
+        const contextWindow = (result.contextWindow && typeof result.contextWindow === 'number')
+            ? result.contextWindow
+            : 0;
+        contextWindowCell.textContent = contextWindow.toLocaleString();
+
+        row.appendChild(providerCell);
+        row.appendChild(inputCostCell);
+        row.appendChild(outputCostCell);
+        row.appendChild(totalCostCell);
+        row.appendChild(costPerRequestCell);
+        row.appendChild(costPer1KCell);
+        row.appendChild(contextWindowCell);
 
         tbody.appendChild(row);
     });
@@ -197,59 +306,126 @@ function displayResults(results) {
 function displaySummary(results) {
     const container = document.getElementById('summary');
 
+    if (!container) {
+        console.error('Summary container not found');
+        return;
+    }
+
+    // Clear previous content
+    container.innerHTML = '';
+
     if (results.length === 0) {
-        container.innerHTML = '<p>Select at least one provider to see results</p>';
+        const message = document.createElement('p');
+        message.textContent = 'Select at least one provider to see results';
+        container.appendChild(message);
+        return;
+    }
+
+    // Array bounds check - ensure we have at least one result
+    if (!results[0]) {
+        console.error('No results available');
         return;
     }
 
     const cheapest = results[0];
-    const mostExpensive = results[results.length - 1];
+    const mostExpensive = results[results.length - 1] || cheapest;
     const savings = calculator.calculateSavings(cheapest, mostExpensive);
 
     const annualCost = calculator.calculateAnnualCost(cheapest.totalCost, state.days);
 
-    container.innerHTML = `
-        <div class="summary-grid">
-            <div class="summary-card">
-                <h3>💰 Best Value</h3>
-                <p class="big-number">${calculator.formatCurrency(cheapest.totalCost)}</p>
-                <p>${cheapest.provider} - ${cheapest.model}</p>
-            </div>
+    // Create summary grid using DOM methods to prevent XSS
+    const summaryGrid = document.createElement('div');
+    summaryGrid.className = 'summary-grid';
 
-            <div class="summary-card">
-                <h3>📊 Price Range</h3>
-                <p class="big-number">${calculator.formatCurrency(cheapest.totalCost)} - ${calculator.formatCurrency(mostExpensive.totalCost)}</p>
-                <p>Across ${results.length} models</p>
-            </div>
+    // Best Value card
+    const bestValueCard = createSummaryCard('💰 Best Value',
+        calculator.formatCurrency(cheapest.totalCost),
+        `${cheapest.provider} - ${cheapest.model}`);
+    summaryGrid.appendChild(bestValueCard);
 
-            <div class="summary-card">
-                <h3>💸 Potential Savings</h3>
-                <p class="big-number">${calculator.formatCurrency(savings.savings)}</p>
-                <p>${savings.percentSavings}% by choosing ${cheapest.model}</p>
-            </div>
+    // Price Range card
+    const priceRangeCard = createSummaryCard('📊 Price Range',
+        `${calculator.formatCurrency(cheapest.totalCost)} - ${calculator.formatCurrency(mostExpensive.totalCost)}`,
+        `Across ${results.length} models`);
+    summaryGrid.appendChild(priceRangeCard);
 
-            <div class="summary-card">
-                <h3>📅 Annual Cost (Lowest)</h3>
-                <p class="big-number">${calculator.formatCurrency(annualCost)}</p>
-                <p>Based on ${cheapest.model}</p>
-            </div>
-        </div>
+    // Potential Savings card
+    const savingsCard = createSummaryCard('💸 Potential Savings',
+        calculator.formatCurrency(savings.savings),
+        `${savings.percentSavings}% by choosing ${cheapest.model}`);
+    summaryGrid.appendChild(savingsCard);
 
-        ${cheapest.hardwareCost ? `
-            <div class="local-hosting-note">
-                <strong>Note on Local Hosting:</strong> ${cheapest.model} requires ${cheapest.hardwareCost}.
-                Factor in hardware costs, electricity (~$100-300/month), and maintenance when comparing to cloud APIs.
-            </div>
-        ` : ''}
+    // Annual Cost card
+    const annualCostCard = createSummaryCard('📅 Annual Cost (Lowest)',
+        calculator.formatCurrency(annualCost),
+        `Based on ${cheapest.model}`);
+    summaryGrid.appendChild(annualCostCard);
 
-        <div class="usage-stats">
-            <p><strong>Usage Statistics:</strong></p>
-            <ul>
-                <li>Total Requests: ${cheapest.totalRequests.toLocaleString()}</li>
-                <li>Total Input Tokens: ${cheapest.totalInputTokens.toLocaleString()}</li>
-                <li>Total Output Tokens: ${cheapest.totalOutputTokens.toLocaleString()}</li>
-                <li>Cost per Request: ${calculator.formatCurrency(cheapest.costPerRequest, 4)}</li>
-            </ul>
-        </div>
-    `;
+    container.appendChild(summaryGrid);
+
+    // Add hardware cost note if applicable
+    if (cheapest.hardwareCost) {
+        const hostingNote = document.createElement('div');
+        hostingNote.className = 'local-hosting-note';
+
+        const noteTitle = document.createElement('strong');
+        noteTitle.textContent = 'Note on Local Hosting: ';
+        hostingNote.appendChild(noteTitle);
+
+        const noteText = document.createTextNode(`${cheapest.model} requires ${cheapest.hardwareCost}. Factor in hardware costs, electricity (~$100-300/month), and maintenance when comparing to cloud APIs.`);
+        hostingNote.appendChild(noteText);
+
+        container.appendChild(hostingNote);
+    }
+
+    // Add usage stats
+    const usageStats = document.createElement('div');
+    usageStats.className = 'usage-stats';
+
+    const statsTitle = document.createElement('p');
+    const statsTitleStrong = document.createElement('strong');
+    statsTitleStrong.textContent = 'Usage Statistics:';
+    statsTitle.appendChild(statsTitleStrong);
+    usageStats.appendChild(statsTitle);
+
+    const statsList = document.createElement('ul');
+
+    const stats = [
+        { label: 'Total Requests', value: cheapest.totalRequests.toLocaleString() },
+        { label: 'Total Input Tokens', value: cheapest.totalInputTokens.toLocaleString() },
+        { label: 'Total Output Tokens', value: cheapest.totalOutputTokens.toLocaleString() },
+        { label: 'Cost per Request', value: calculator.formatCurrency(cheapest.costPerRequest, 4) }
+    ];
+
+    stats.forEach(stat => {
+        const li = document.createElement('li');
+        li.textContent = `${stat.label}: ${stat.value}`;
+        statsList.appendChild(li);
+    });
+
+    usageStats.appendChild(statsList);
+    container.appendChild(usageStats);
+}
+
+/**
+ * Helper function to create summary cards safely
+ */
+function createSummaryCard(title, bigNumber, description) {
+    const card = document.createElement('div');
+    card.className = 'summary-card';
+
+    const h3 = document.createElement('h3');
+    h3.textContent = title;
+    card.appendChild(h3);
+
+    const bigNumberP = document.createElement('p');
+    bigNumberP.className = 'big-number';
+    bigNumberP.textContent = bigNumber;
+    card.appendChild(bigNumberP);
+
+    const descP = document.createElement('p');
+    descP.textContent = description;
+    card.appendChild(descP);
+
+    return card;
 }
