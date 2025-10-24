@@ -1,6 +1,6 @@
 /**
  * LLM Provider Pricing Data
- * Prices in USD per 1M tokens (updated September 2025)
+ * Prices in USD per 1M tokens (updated October 2025)
  */
 
 const LLM_PROVIDERS = {
@@ -9,7 +9,7 @@ const LLM_PROVIDERS = {
         models: {
             "gpt-4o": {
                 name: "GPT-4o",
-                inputPrice: 2.50,
+                inputPrice: 3.00,
                 outputPrice: 10.00,
                 contextWindow: 128000
             },
@@ -105,8 +105,8 @@ const LLM_PROVIDERS = {
         models: {
             "gpt-4o": {
                 name: "GPT-4o (Azure)",
-                inputPrice: 5.00,
-                outputPrice: 15.00,
+                inputPrice: 3.00,
+                outputPrice: 10.00,
                 contextWindow: 128000
             },
             "gpt-4-turbo": {
