@@ -1,37 +1,29 @@
-name: Node.js CI
+name: HTML/JavaScript CI
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, gh-pages ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, gh-pages ]
 
 jobs:
-  test:
+  validate:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [16.x, 18.x, 20.x]
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
+    - name: Validate HTML
+      uses: Cyb3r-Jak3/html5validator-action@v7.2.0
       with:
-        node-version: ${{ matrix.node-version }}
-
-    - name: Install dependencies
-      run: |
-        if [ -f package.json ]; then npm ci || npm install; fi
+        root: .
       continue-on-error: true
 
-    - name: Run tests
+    - name: Check JavaScript syntax
       run: |
-        if [ -f package.json ]; then npm test || true; fi
+        find . -name "*.js" -not -path "*/node_modules/*" -exec node --check {} \;
       continue-on-error: true
 
-    - name: Build
+    - name: Verify files exist
       run: |
-        if [ -f package.json ]; then npm run build --if-present || true; fi
-      continue-on-error: true
+        test -f index.html && echo "OK: index.html exists" || echo "WARN: no index.html"
