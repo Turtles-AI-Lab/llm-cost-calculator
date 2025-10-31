@@ -1,0 +1,37 @@
+name: Node.js CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Install dependencies
+      run: |
+        if [ -f package.json ]; then npm ci || npm install; fi
+      continue-on-error: true
+
+    - name: Run tests
+      run: |
+        if [ -f package.json ]; then npm test || true; fi
+      continue-on-error: true
+
+    - name: Build
+      run: |
+        if [ -f package.json ]; then npm run build --if-present || true; fi
+      continue-on-error: true

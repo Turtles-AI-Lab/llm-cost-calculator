@@ -1,5 +1,13 @@
 # 💰 LLM Cost Calculator
 
+
+![GitHub stars](https://img.shields.io/github/stars/Turtles-AI-Lab/llm-cost-calculator?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Turtles-AI-Lab/llm-cost-calculator?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Turtles-AI-Lab/llm-cost-calculator)
+![GitHub license](https://img.shields.io/github/license/Turtles-AI-Lab/llm-cost-calculator)
+![GitHub last commit](https://img.shields.io/github/last-commit/Turtles-AI-Lab/llm-cost-calculator)
+
+
 **Compare AI API costs across providers instantly** - A free, open-source web tool to estimate and compare LLM costs from OpenAI, Anthropic, Google, Azure, Mistral, and local models.
 
 [![Live Demo](https://img.shields.io/badge/demo-live-success)](https://turtles-ai-lab.github.io/llm-cost-calculator)
